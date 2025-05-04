@@ -1,9 +1,7 @@
-name: Deploy Lambda to AWS
+name: Deploy Lambda Function
 
 on:
   push:
-    paths:
-      - 'lambda_build/output/function.zip'  # Trigger only if this file changes
     branches:
       - main
 
@@ -12,15 +10,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Upload to AWS Lambda
-        uses: appleboy/lambda-action@v0.1.9
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install zip
+        run: sudo apt-get install zip -y
+
+      - name: Rebuild function.zip
+        run: |
+          cd lambda_build
+          rm -rf output
+          docker build -t lambda-numpy-builder .
+          docker create --name temp-lambda lambda-numpy-builder
+          docker cp temp-lambda:/lambda_build ./output
+          docker rm temp-lambda
+          cp lambda_function.py ./output/
+          cd output
+          zip -r function.zip .
+
+      - name: Upload ZIP to S3
+        run: |
+          aws s3 cp lambda_build/output/function.zip s3://seedtoscore-lambda-artifacts/lambda/function.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Deploy Lambda from S3
+        uses: appleboy/lambda-action@master
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: us-east-1
           function_name: SeedToScoreFunction
-          zip_file: lambda_build/output/function.zip
-
+          s3_bucket: seedtoscore-lambda-artifacts
+          s3_key: lambda/function.zip
