@@ -1,0 +1,26 @@
+name: Deploy Lambda to AWS
+
+on:
+  push:
+    paths:
+      - 'lambda_build/output/function.zip'  # Trigger only if this file changes
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Upload to AWS Lambda
+        uses: appleboy/lambda-action@v0.1.9
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: us-east-1
+          function_name: SeedToScoreFunction
+          zip_file: lambda_build/output/function.zip
+
