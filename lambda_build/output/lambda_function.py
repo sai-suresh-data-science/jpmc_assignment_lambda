@@ -16,7 +16,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Setup SageMaker client
-sagemaker_client = boto3.client("sagemaker-runtime", region_name="us-east-1")
+sagemaker_client = boto3.client("sagemaker-runtime", region_name="us-east-1") 
 ENDPOINT_NAME = "nu-lgbm-infer-endpoint" 
 
 def lambda_handler(event, context):

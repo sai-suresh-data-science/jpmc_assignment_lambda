@@ -35,9 +35,11 @@ jobs:
         run: |
           cd lambda_build/output
           zip -r function.zip .
+          ls -lh function.zip
 
       - name: Upload ZIP to S3
         run: |
+          cd lambda_build/output
           aws s3 cp function.zip s3://${{ env.S3_BUCKET }}/${{ env.S3_KEY }}
 
       - name: Deploy Lambda from S3
