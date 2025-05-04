@@ -1,4 +1,4 @@
-name: Deploy Lambda Function
+name: Lambda Deploy via S3
 
 on:
   push:
@@ -9,8 +9,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: us-east-1
+      FUNCTION_NAME: SeedToScoreFunction
+      S3_BUCKET: seed-to-score-lambda-code
+      S3_KEY: lambda/function.zip
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -18,35 +24,23 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install zip
-        run: sudo apt-get install zip -y
-
-      - name: Rebuild function.zip
+      - name: Zip Lambda function
         run: |
-          cd lambda_build
-          rm -rf output
-          docker build -t lambda-numpy-builder .
-          docker create --name temp-lambda lambda-numpy-builder
-          docker cp temp-lambda:/lambda_build ./output
-          docker rm temp-lambda
-          cp lambda_function.py ./output/
-          cd output
+          cd lambda_build/output
           zip -r function.zip .
 
       - name: Upload ZIP to S3
-        run: |
-          aws s3 cp lambda_build/output/function.zip s3://seedtoscore-lambda-artifacts/lambda/function.zip
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
+        uses: aws-actions/aws-cli-action@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          args: s3 cp lambda_build/output/function.zip s3://${{ env.S3_BUCKET }}/${{ env.S3_KEY }}
 
       - name: Deploy Lambda from S3
-        uses: appleboy/lambda-action@master
+        uses: aws-actions/aws-cli-action@v1
         with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: us-east-1
-          function_name: SeedToScoreFunction
-          s3_bucket: seedtoscore-lambda-artifacts
-          s3_key: lambda/function.zip
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          args: lambda update-function-code --function-name ${{ env.FUNCTION_NAME }} --s3-bucket ${{ env.S3_BUCKET }} --s3-key ${{ env.S3_KEY }}

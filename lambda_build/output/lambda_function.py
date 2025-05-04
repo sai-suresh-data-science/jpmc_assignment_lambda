@@ -21,7 +21,7 @@ ENDPOINT_NAME = "nu-lgbm-infer-endpoint"
 
 def lambda_handler(event, context):
     try:
-        logger.info("Received event: %s", event)
+        logger.info("Received event: %s", event) 
 
         # Parse input
         body = json.loads(event["body"])
