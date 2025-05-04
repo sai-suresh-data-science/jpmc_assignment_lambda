@@ -11,7 +11,7 @@ import boto3
 import numpy as np
 import logging
 
-# Logging setup
+# Logging setup 
 logger = logging.getLogger() 
 logger.setLevel(logging.INFO)
 

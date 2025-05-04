@@ -24,23 +24,25 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
       - name: Zip Lambda function
         run: |
           cd lambda_build/output
           zip -r function.zip .
 
       - name: Upload ZIP to S3
-        uses: aws-actions/aws-cli-action@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          args: s3 cp lambda_build/output/function.zip s3://${{ env.S3_BUCKET }}/${{ env.S3_KEY }}
+        run: |
+          aws s3 cp lambda_build/output/function.zip s3://${{ env.S3_BUCKET }}/${{ env.S3_KEY }}
 
       - name: Deploy Lambda from S3
-        uses: aws-actions/aws-cli-action@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          args: lambda update-function-code --function-name ${{ env.FUNCTION_NAME }} --s3-bucket ${{ env.S3_BUCKET }} --s3-key ${{ env.S3_KEY }}
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ env.FUNCTION_NAME }} \
+            --s3-bucket ${{ env.S3_BUCKET }} \
+            --s3-key ${{ env.S3_KEY }}
