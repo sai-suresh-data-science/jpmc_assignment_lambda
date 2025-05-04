@@ -12,7 +12,7 @@ jobs:
     env:
       AWS_REGION: us-east-1
       FUNCTION_NAME: SeedToScoreFunction
-      S3_BUCKET: seed-to-score-lambda-code
+      S3_BUCKET: seedtoscore-lambda-artifacts
       S3_KEY: lambda/function.zip
 
     steps:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Upload ZIP to S3
         run: |
-          aws s3 cp lambda_build/output/function.zip s3://${{ env.S3_BUCKET }}/${{ env.S3_KEY }}
+          aws s3 cp function.zip s3://${{ env.S3_BUCKET }}/${{ env.S3_KEY }}
 
       - name: Deploy Lambda from S3
         run: |

@@ -6,7 +6,7 @@ Created on Fri May  2 22:46:13 2025
 @author: saisuresh
 """
 
-import json
+import json 
 import boto3
 import numpy as np
 import logging
